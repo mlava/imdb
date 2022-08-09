@@ -1,3 +1,137 @@
+// copied and adapted from https://github.com/dvargas92495/roamjs-components/blob/main/src/writes/createBlock.ts
+const createBlock = (params) => {
+    const uid = window.roamAlphaAPI.util.generateUID();
+    return Promise.all([
+        window.roamAlphaAPI.createBlock({
+            location: {
+                "parent-uid": params.parentUid,
+                order: params.order,
+            },
+            block: {
+                uid,
+                string: params.node.text
+            }
+        })
+    ].concat((params.node.children || []).map((node, order) => 
+        createBlock({parentUid: uid, order, node })
+    )))
+};
+
+// copied and adapted from https://github.com/dvargas92495/roamjs-components/blob/main/src/components/FormDialog.tsx
+const FormDialog = ({
+    onSubmit,
+    title,
+    options,
+    question,
+    onClose,
+}) => {
+  const [data, setData] = window.React.useState(options[0].id);
+  const onClick = window.React.useCallback(
+    () => {
+        onSubmit(data);
+        onClose();
+    },
+    [data, onClose]
+  );
+  const onCancel = window.React.useCallback(
+    () => {
+        onSubmit("");
+        onClose();
+    },
+    [onClose]
+  )
+  return window.React.createElement(
+    window.Blueprint.Core.Dialog,
+    { isOpen: true, onClose: onCancel, title,  },
+    window.React.createElement(
+        "div",
+        {className: window.Blueprint.Core.Classes.DIALOG_BODY},
+        question,
+        window.React.createElement(
+            window.Blueprint.Core.Label,
+            {},
+            "Movies:",
+            window.React.createElement(
+                window.Blueprint.Select.Select,
+                { 
+                    activeItem: data, 
+                    onItemSelect: (id) => setData(id), 
+                    items: options.map(opt => opt.id),
+                    itemRenderer: (item, {modifiers, handleClick}) => window.React.createElement(
+                        window.Blueprint.Core.MenuItem,
+                        { 
+                            key: item, 
+                            text: options.find(opt => opt.id === item).label, 
+                            active: modifiers.active,
+                            onClick: handleClick,
+                        }
+                    ),
+                    filterable: false,
+                    popoverProps: {
+                        minimal: true,
+                        captureDismiss: true,
+                    } 
+                },
+                window.React.createElement(
+                    window.Blueprint.Core.Button,
+                    { 
+                        text: options.find(opt => opt.id === data ).label,
+                        rightIcon: "double-caret-vertical" 
+                    }
+                )
+            )
+        )
+    ),
+    window.React.createElement(
+        "div",
+        {className: window.Blueprint.Core.Classes.DIALOG_FOOTER},
+        window.React.createElement(
+            "div",
+            {className: window.Blueprint.Core.Classes.DIALOG_FOOTER_ACTIONS},
+            window.React.createElement(
+                window.Blueprint.Core.Button,
+                {text: "Cancel", onClick: onCancel,}
+            ),
+            window.React.createElement(
+                window.Blueprint.Core.Button,
+                {text: "Submit", intent: "primary", onClick}
+            )
+        )
+    )
+  );
+}
+
+const prompt = ({
+    options,
+    question,
+    title,
+}) =>
+    new Promise((resolve) => {
+        const app = document.getElementById("app");
+        const parent = document.createElement("div");
+        parent.id = 'imdb-prompt-root';
+        app.parentElement.appendChild(parent);
+
+        window.ReactDOM.render(
+            window.React.createElement(
+                FormDialog,
+                {
+                    onSubmit: resolve,
+                    title,
+                    options,
+                    question,
+                    onClose: () => {
+                        window.ReactDOM.unmountComponentAtNode(parent);
+                        parent.remove();
+                    }
+                }
+            ),
+            parent
+        )
+    });
+// Let me know if you want to learn how to use `roamjs-components`, `roamjs-scripts` and `npm`
+// Which will allow you to use these components *directly* without having to copy, paste, and adapt
+
 const config = {
     tabTitle: "IMDb import",
     settings: [
@@ -24,6 +158,22 @@ export default {
                     }
                 })
             ),
+        });
+
+        window.roamAlphaAPI.ui.commandPalette.addCommand({
+            label: "IMDb import (by Vargas)",
+            callback: () => {
+                const uid = window.roamAlphaAPI.ui.getFocusedBlock()?.["block-uid"];
+                fetchIMDbByVargas(uid).then(async (blocks) => {
+                    // if no block is focused, use the currently opened page as the parent
+                    const parentUid = uid || await window.roamAlphaAPI.ui.mainWindow.getOpenPageOrBlockUid();
+                    blocks.forEach((node, order) => createBlock({
+                        parentUid,
+                        order,
+                        node
+                    }))
+                });
+            },
         });
 
         const args = {
@@ -147,6 +297,75 @@ export default {
                 resolve(string);
             }));
             */
+        };
+
+        async function fetchIMDbByVargas(uid) {
+            const apiKey = extensionAPI.settings.get("imdb-apiKey");
+            const pageId = window.roamAlphaAPI.pull("[*]", [":block/uid", uid])?.[":block/page"]?.[":db/id"];
+            const pageTitle = pageId
+                ? window.roamAlphaAPI.pull("[:node/title]", pageId)?.[":node/title"]
+                : window.roamAlphaAPI.pull("[:node/title]", [
+                    ":block/uid",
+                    await window.roamAlphaAPI.ui.mainWindow.getOpenPageOrBlockUid()
+                  ])?.[":node/title"];
+            var settings = {
+                "url": "https://www.omdbapi.com/?apiKey=" + apiKey + "&s=" + pageTitle + "",
+                "method": "GET", // unnecessary
+                "async": false, // unnecessary
+            };
+
+            // you don't need jquery ($), it will bloat your extension. 
+            // use `fetch` instead for network requests
+            return fetch(settings.url).then(r => r.json()).then((movies) => {
+                const options = movies.Search
+                    .filter(m => m.Type === "movie" || m.Type === "series")
+                    .map(m => ({label: m.Title, id: m.imdbID }));
+                return prompt({
+                    title: "IMDB",
+                    question: "Which movie did you mean?",
+                    options,
+                })
+            }).then((movieId) => {
+                var settings = {
+                    "url": "https://www.omdbapi.com/?apiKey=" + apiKey + "&i=" + movieId + "",
+                    "method": "GET", // unnecessary
+                    "async": false, // unnecessary
+                };
+                return !movieId ? [{text: "No movie selected!"}] : fetch(settings.url).then(r => r.json()).then((movies) => {
+                    const directors = movies.Director;
+                    const writers = movies.Writer
+                        .replace(new RegExp('(based on a story by)|(additional story material)|(screen play)|(by)|(novel)|(characters)|(story by)|(screenplay by)|(based on characters created by)|(based upon the novel by)|(story)|(screenplay)|(co-head)', 'g'), "")
+                        .replace(new RegExp('\[(.+)\]', 'g'), "")
+                        .replace(new RegExp(' , ', 'g'), "]] [[")
+                        .replace(new RegExp(', ', 'g'), "]] [[");
+                    const cast = movies.Actors.replace(new RegExp(', ', 'g'), "]] [[");
+                    const genre = movies.Genre.replace(new RegExp(', ', 'g'), " #");
+                    
+                    // SmartBlocks will be able to just accept this data format and output appropriately
+                    // In the Roam Command Palette, we have to manually create the blocks
+                    return [
+                        {
+                            text: "![](" + movies.Poster + ")  "
+                        },
+                        {
+                            text: "**Metadata:**", 
+                            children: [
+                                { text: "**Director:** [[" + directors + "]]" },
+                                { text: "**Writer:** [[" + writers + "]]" },
+                                { text: "**Cast:** [[" + cast + "]]" },
+                                { text: "**Year:** [[" + movies.Year + "]]" },
+                                { text: "**Keywords:** #" + genre + "" },
+                            ]
+                        },
+                        {
+                            text: "**IMDb:** https://www.imdb.com/title/" + movies.imdbID + "",
+                            children: [
+                                { text: "**Plot Summary:** " + movies.Plot + "" }
+                            ]
+                        }
+                    ];
+                })
+            })
         };
     },
     onunload: () => {
