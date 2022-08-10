@@ -139,6 +139,42 @@ const config = {
             description: "Your API Key from http://www.omdbapi.com/apikey.aspx",
             action: { type: "input", placeholder: "Add OMDb API key here" },
         },
+        {
+            id: "imdb-director",
+            name: "Director heading",
+            description: "Preferred heading text for Director field",
+            action: { type: "input", placeholder: "Director" },
+        },
+        {
+            id: "imdb-writer",
+            name: "Writer heading",
+            description: "Preferred heading text for Writer field",
+            action: { type: "input", placeholder: "Writer" },
+        },
+        {
+            id: "imdb-cast",
+            name: "Cast heading",
+            description: "Preferred heading text for Cast field",
+            action: { type: "input", placeholder: "Cast" },
+        },
+        {
+            id: "imdb-year",
+            name: "Release Year heading",
+            description: "Preferred heading text for release year field",
+            action: { type: "input", placeholder: "Year" },
+        },
+        {
+            id: "imdb-genre",
+            name: "Genre heading",
+            description: "Preferred heading text for genre field",
+            action: { type: "input", placeholder: "Genre" },
+        },
+        {
+            id: "imdb-attributes",
+            name: "Output as attributes",
+            description: "Import each field using Roam atributes",
+            action: { type: "switch" },
+        },
     ]
 };
 
@@ -179,12 +215,48 @@ export default {
         }
 
         async function fetchIMDb(uid) {
+            var imdbDirector, imdbWriter, imdbCast, imdbYear, imdbAttributes, imdbGenre;
             breakme: {
                 if (!extensionAPI.settings.get("imdb-apiKey")) {
                     sendConfigAlert();
                     break breakme;
                 } else {
                     const apiKey = extensionAPI.settings.get("imdb-apiKey");
+                    if (!extensionAPI.settings.get("imdb-director")) {
+                        imdbDirector = "Director";
+                        console.log("imdbDirector set to default");
+                    } else {
+                        imdbDirector = extensionAPI.settings.get("imdb-director");
+                    }
+                    if (!extensionAPI.settings.get("imdb-writer")) {
+                        imdbWriter = "Writer";
+                        console.log("TodoistAccount set to default");
+                    } else {
+                        imdbWriter = extensionAPI.settings.get("imdb-writer");
+                    }
+                    if (!extensionAPI.settings.get("imdb-cast")) {
+                        imdbCast = "Cast";
+                        console.log("imdbCast set to default");
+                    } else {
+                        imdbCast = extensionAPI.settings.get("imdb-cast");
+                    }
+                    if (!extensionAPI.settings.get("imdb-year")) {
+                        imdbYear = "Year";
+                        console.log("imdbYear set to default");
+                    } else {
+                        imdbYear = extensionAPI.settings.get("imdb-year");
+                    }
+                    if (!extensionAPI.settings.get("imdb-genre")) {
+                        imdbGenre = "Genre";
+                        console.log("imdbGenre set to default");
+                    } else {
+                        imdbGenre = extensionAPI.settings.get("imdb-genre");
+                    }
+                    if (extensionAPI.settings.get("imdb-attributes") == true) {
+                        imdbAttributes = "::";
+                    } else {
+                        imdbAttributes = ":";
+                    }
                     const pageId = window.roamAlphaAPI.pull("[*]", [":block/uid", uid])?.[":block/page"]?.[":db/id"];
                     const pageTitle = pageId
                         ? window.roamAlphaAPI.pull("[:node/title]", pageId)?.[":node/title"]
@@ -222,11 +294,11 @@ export default {
                                 {
                                     text: "**Metadata:**",
                                     children: [
-                                        { text: "**Director:** [[" + directors + "]]" },
-                                        { text: "**Writer:** [[" + writers + "]]" },
-                                        { text: "**Cast:** [[" + cast + "]]" },
-                                        { text: "**Year:** [[" + movies.Year + "]]" },
-                                        { text: "**Keywords:** #" + genre + "" },
+                                        { text: "**"+imdbDirector+""+imdbAttributes+"** [[" + directors + "]]" },
+                                        { text: "**"+imdbWriter+""+imdbAttributes+"** [[" + writers + "]]" },
+                                        { text: "**"+imdbCast+""+imdbAttributes+"** [[" + cast + "]]" },
+                                        { text: "**"+imdbYear+""+imdbAttributes+"** [[" + movies.Year + "]]" },
+                                        { text: "**"+imdbGenre+""+imdbAttributes+"** #" + genre + "" },
                                     ]
                                 },
                                 {
