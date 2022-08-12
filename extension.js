@@ -215,7 +215,7 @@ export default {
         }
 
         async function fetchIMDb(uid) {
-            var imdbDirector, imdbWriter, imdbCast, imdbYear, imdbAttributes, imdbGenre;
+            var imdbDirector, imdbWriter, imdbCast, imdbYear, imdbGenre;
             breakme: {
                 if (!extensionAPI.settings.get("imdb-apiKey")) {
                     sendConfigAlert();
@@ -252,11 +252,6 @@ export default {
                     } else {
                         imdbGenre = extensionAPI.settings.get("imdb-genre");
                     }
-                    if (extensionAPI.settings.get("imdb-attributes") == true) {
-                        imdbAttributes = "::";
-                    } else {
-                        imdbAttributes = ":";
-                    }
                     const pageId = window.roamAlphaAPI.pull("[*]", [":block/uid", uid])?.[":block/page"]?.[":db/id"];
                     const pageTitle = pageId
                         ? window.roamAlphaAPI.pull("[:node/title]", pageId)?.[":node/title"]
@@ -287,25 +282,47 @@ export default {
                             const cast = movies.Actors.replace(new RegExp(', ', 'g'), "]] [[");
                             const genre = movies.Genre.replace(new RegExp(', ', 'g'), " #");
 
-                            return [
-                                {
-                                    text: "![](" + movies.Poster + ")  "
-                                },
-                                {
-                                    text: "**Metadata:**",
-                                    children: [
-                                        { text: "**"+imdbDirector+""+imdbAttributes+"** [[" + directors + "]]" },
-                                        { text: "**"+imdbWriter+""+imdbAttributes+"** [[" + writers + "]]" },
-                                        { text: "**"+imdbCast+""+imdbAttributes+"** [[" + cast + "]]" },
-                                        { text: "**"+imdbYear+""+imdbAttributes+"** [[" + movies.Year + "]]" },
-                                        { text: "**"+imdbGenre+""+imdbAttributes+"** #" + genre + "" },
-                                    ]
-                                },
-                                {
-                                    text: "**IMDb:** https://www.imdb.com/title/" + movies.imdbID + "",
-                                },
-                                { text: "**Plot Summary:** " + movies.Plot + "" },
-                            ];
+                            if (extensionAPI.settings.get("imdb-attributes") == true) {
+                                return [
+                                    {
+                                        text: "![](" + movies.Poster + ")  "
+                                    },
+                                    {
+                                        text: "**Metadata:**",
+                                        children: [
+                                            { text: ""+imdbDirector+":: [[" + directors + "]]" },
+                                            { text: ""+imdbWriter+":: [[" + writers + "]]" },
+                                            { text: ""+imdbCast+":: [[" + cast + "]]" },
+                                            { text: ""+imdbYear+":: [[" + movies.Year + "]]" },
+                                            { text: ""+imdbGenre+":: #" + genre + "" },
+                                        ]
+                                    },
+                                    {
+                                        text: "**IMDb:** https://www.imdb.com/title/" + movies.imdbID + "",
+                                    },
+                                    { text: "**Plot Summary:** " + movies.Plot + "" },
+                                ];
+                            } else {
+                                return [
+                                    {
+                                        text: "![](" + movies.Poster + ")  "
+                                    },
+                                    {
+                                        text: "**Metadata:**",
+                                        children: [
+                                            { text: "**"+imdbDirector+":** [[" + directors + "]]" },
+                                            { text: "**"+imdbWriter+":** [[" + writers + "]]" },
+                                            { text: "**"+imdbCast+":** [[" + cast + "]]" },
+                                            { text: "**"+imdbYear+":** [[" + movies.Year + "]]" },
+                                            { text: "**"+imdbGenre+":** #" + genre + "" },
+                                        ]
+                                    },
+                                    {
+                                        text: "**IMDb:** https://www.imdb.com/title/" + movies.imdbID + "",
+                                    },
+                                    { text: "**Plot Summary:** " + movies.Plot + "" },
+                                ];
+                            }
                     })
                 })
             }
