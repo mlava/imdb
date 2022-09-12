@@ -224,31 +224,26 @@ export default {
                     const apiKey = extensionAPI.settings.get("imdb-apiKey");
                     if (!extensionAPI.settings.get("imdb-director")) {
                         imdbDirector = "Director";
-                        console.log("imdbDirector set to default");
                     } else {
                         imdbDirector = extensionAPI.settings.get("imdb-director");
                     }
                     if (!extensionAPI.settings.get("imdb-writer")) {
                         imdbWriter = "Writer";
-                        console.log("TodoistAccount set to default");
                     } else {
                         imdbWriter = extensionAPI.settings.get("imdb-writer");
                     }
                     if (!extensionAPI.settings.get("imdb-cast")) {
                         imdbCast = "Cast";
-                        console.log("imdbCast set to default");
                     } else {
                         imdbCast = extensionAPI.settings.get("imdb-cast");
                     }
                     if (!extensionAPI.settings.get("imdb-year")) {
                         imdbYear = "Year";
-                        console.log("imdbYear set to default");
                     } else {
                         imdbYear = extensionAPI.settings.get("imdb-year");
                     }
                     if (!extensionAPI.settings.get("imdb-genre")) {
                         imdbGenre = "Genre";
-                        console.log("imdbGenre set to default");
                     } else {
                         imdbGenre = extensionAPI.settings.get("imdb-genre");
                     }
@@ -259,9 +254,16 @@ export default {
                             ":block/uid",
                             await window.roamAlphaAPI.ui.mainWindow.getOpenPageOrBlockUid()
                         ])?.[":node/title"];
-                    var url = "https://www.omdbapi.com/?apiKey=" + apiKey + "&s=" + pageTitle + "";
+                    const regex = /(\/)/g;
+                    const subst = `%2F`;
+                    const result = pageTitle.replace(regex, subst);
+                    var url = "https://www.omdbapi.com/?apiKey=" + apiKey + "&s=" + result + "";
+                    var url1 = "https://www.omdbapi.com/?apiKey=" + apiKey + "&t=" + result + "";
 
                     return fetch(url).then(r => r.json()).then((movies) => {
+                        if (movies.Response == "False") {                            
+                            return fetch(url1).then((response) => response.json()).then((data) => {return data.imdbID});
+                        } else {
                         const options = movies.Search
                             .filter(m => m.Type === "movie" || m.Type === "series")
                             .map(m => ({ label: "" + m.Title + " (" + m.Year + ")", id: m.imdbID }));
@@ -270,8 +272,9 @@ export default {
                             question: "Which movie do you mean?",
                             options,
                         })
+                    }
                     }).then((movieId) => {
-                        var url = "https://www.omdbapi.com/?apiKey=" + apiKey + "&i=" + movieId + "";
+                        var url = "https://www.omdbapi.com/?apiKey=" + apiKey + "&i=" + movieId + "&plot=full";
                         return !movieId ? [{ text: "No movie selected!" }] : fetch(url).then(r => r.json()).then((movies) => {
                             const directors = movies.Director;
                             const writers = movies.Writer
@@ -290,11 +293,11 @@ export default {
                                     {
                                         text: "**Metadata:**",
                                         children: [
-                                            { text: ""+imdbDirector+":: [[" + directors + "]]" },
-                                            { text: ""+imdbWriter+":: [[" + writers + "]]" },
-                                            { text: ""+imdbCast+":: [[" + cast + "]]" },
-                                            { text: ""+imdbYear+":: [[" + movies.Year + "]]" },
-                                            { text: ""+imdbGenre+":: #" + genre + "" },
+                                            { text: "" + imdbDirector + ":: [[" + directors + "]]" },
+                                            { text: "" + imdbWriter + ":: [[" + writers + "]]" },
+                                            { text: "" + imdbCast + ":: [[" + cast + "]]" },
+                                            { text: "" + imdbYear + ":: [[" + movies.Year + "]]" },
+                                            { text: "" + imdbGenre + ":: #" + genre + "" },
                                         ]
                                     },
                                     {
@@ -310,11 +313,11 @@ export default {
                                     {
                                         text: "**Metadata:**",
                                         children: [
-                                            { text: "**"+imdbDirector+":** [[" + directors + "]]" },
-                                            { text: "**"+imdbWriter+":** [[" + writers + "]]" },
-                                            { text: "**"+imdbCast+":** [[" + cast + "]]" },
-                                            { text: "**"+imdbYear+":** [[" + movies.Year + "]]" },
-                                            { text: "**"+imdbGenre+":** #" + genre + "" },
+                                            { text: "**" + imdbDirector + ":** [[" + directors + "]]" },
+                                            { text: "**" + imdbWriter + ":** [[" + writers + "]]" },
+                                            { text: "**" + imdbCast + ":** [[" + cast + "]]" },
+                                            { text: "**" + imdbYear + ":** [[" + movies.Year + "]]" },
+                                            { text: "**" + imdbGenre + ":** #" + genre + "" },
                                         ]
                                     },
                                     {
@@ -323,20 +326,20 @@ export default {
                                     { text: "**Plot Summary:** " + movies.Plot + "" },
                                 ];
                             }
+                        })
                     })
-                })
+                }
             }
-        }
-    };
-},
-onunload: () => {
-    window.roamAlphaAPI.ui.commandPalette.removeCommand({
-        label: 'IMDb import'
-    });
-    if (window.roamjs?.extension?.smartblocks) {
-        window.roamjs.extension.smartblocks.unregisterCommand("IMDB");
-    };
-}
+        };
+    },
+    onunload: () => {
+        window.roamAlphaAPI.ui.commandPalette.removeCommand({
+            label: 'IMDb import'
+        });
+        if (window.roamjs?.extension?.smartblocks) {
+            window.roamjs.extension.smartblocks.unregisterCommand("IMDB");
+        };
+    }
 }
 
 function sendConfigAlert() {
