@@ -187,12 +187,22 @@ export default {
             callback: () => {
                 const uid = window.roamAlphaAPI.ui.getFocusedBlock()?.["block-uid"];
                 fetchIMDb(uid).then(async (blocks) => {
-                    const parentUid = uid || await window.roamAlphaAPI.ui.mainWindow.getOpenPageOrBlockUid();
-                    blocks.forEach((node, order) => createBlock({
-                        parentUid,
-                        order,
-                        node
-                    }))
+                    if (uid != undefined) {
+                        const pageId = window.roamAlphaAPI.pull("[*]", [":block/uid", uid])?.[":block/page"]?.[":db/id"];
+                        const parentUid = window.roamAlphaAPI.pull("[:block/uid]", pageId)?.[":block/uid"];
+                        blocks.forEach((node, order) => createBlock({
+                            parentUid,
+                            order,
+                            node
+                        }));
+                    } else {
+                        const parentUid = await window.roamAlphaAPI.ui.mainWindow.getOpenPageOrBlockUid();
+                        blocks.forEach((node, order) => createBlock({
+                            parentUid,
+                            order,
+                            node
+                        }))
+                    }
                 });
             },
         });
