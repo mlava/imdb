@@ -1,5 +1,8 @@
 This extension allows you to search and import metadata for films or tv series from the IMDb. 
 
+**New:**
+- get Ratings from IMDb, Rotten Tomatoes and Metacritic if they are available.
+
 You will need to get an API key from [omdbapi.com](http://www.omdbapi.com/apikey.aspx) and insert it in the Roam Depot configuration panel.
 
 You can trigger the extension via the Command Palette or via SmartBlocks using <%IMDB%>.
