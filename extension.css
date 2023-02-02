@@ -1,0 +1,55 @@
+[data-tag^='imdbIcon'] {
+    display:none !important;
+} 
+
+[data-tag^='imdbIcon'] + .rm-highlight {
+    background-color: unset !important;
+    background-image: url("https://img.icons8.com/external-tal-revivo-color-tal-revivo/44/external-imdb-an-online-database-of-information-related-to-films-and-television-programs-logo-color-tal-revivo.png");
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: 24px;
+    padding-left: 28px;
+    margin-left: 6px;
+}
+
+[data-tag^='rtIconFresh'] {
+    display:none !important;
+} 
+
+[data-tag^='rtIconFresh'] + .rm-highlight {
+    background-color: unset !important;
+    background-image: url("https://www.rottentomatoes.com/assets/pizza-pie/images/icons/tomatometer/tomatometer-fresh.149b5e8adc3.svg");
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    padding-left: 24px;
+    margin-left: 6px;
+}
+
+[data-tag^='rtIconRotten'] {
+    display:none !important;
+} 
+
+[data-tag^='rtIconRotten'] + .rm-highlight {
+    background-color: unset !important;
+    background-image: url("https://img.icons8.com/fluency/44/rotten-tomatoes.png");
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: 24px;
+    padding-left: 28px;
+    margin-left: 6px;
+}
+
+[data-tag^='mcIcon'] {
+    display:none !important;
+} 
+
+[data-tag^='mcIcon'] + .rm-highlight {
+    background-color: unset !important;
+    background-image: url("https://img.icons8.com/color/24/metascore.png");
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: 24px;
+    padding-left: 28px;
+    margin-left: 6px;
+} 

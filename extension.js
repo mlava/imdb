@@ -170,6 +170,12 @@ const config = {
             action: { type: "input", placeholder: "Genre" },
         },
         {
+            id: "imdb-rating",
+            name: "Ratings heading",
+            description: "Preferred heading text for ratings field",
+            action: { type: "input", placeholder: "Ratings" },
+        },
+        {
             id: "imdb-attributes",
             name: "Output as attributes",
             description: "Import each field using Roam atributes",
@@ -225,7 +231,7 @@ export default {
         }
 
         async function fetchIMDb(uid) {
-            var imdbDirector, imdbWriter, imdbCast, imdbYear, imdbGenre;
+            var imdbDirector, imdbWriter, imdbCast, imdbYear, imdbGenre, imdbRatingString;
             breakme: {
                 if (!extensionAPI.settings.get("imdb-apiKey")) {
                     sendConfigAlert();
@@ -257,6 +263,12 @@ export default {
                     } else {
                         imdbGenre = extensionAPI.settings.get("imdb-genre");
                     }
+                    if (!extensionAPI.settings.get("imdb-rating")) {
+                        imdbRatingString = "Ratings";
+                    } else {
+                        imdbRatingString = extensionAPI.settings.get("imdb-rating");
+                    }
+                    
                     const pageId = window.roamAlphaAPI.pull("[*]", [":block/uid", uid])?.[":block/page"]?.[":db/id"];
                     const pageTitle = pageId
                         ? window.roamAlphaAPI.pull("[:node/title]", pageId)?.[":node/title"]
@@ -271,18 +283,18 @@ export default {
                     var url1 = "https://www.omdbapi.com/?apiKey=" + apiKey + "&t=" + result + "";
 
                     return fetch(url).then(r => r.json()).then((movies) => {
-                        if (movies.Response == "False") {                            
-                            return fetch(url1).then((response) => response.json()).then((data) => {return data.imdbID});
+                        if (movies.Response == "False") {
+                            return fetch(url1).then((response) => response.json()).then((data) => { return data.imdbID });
                         } else {
-                        const options = movies.Search
-                            .filter(m => m.Type === "movie" || m.Type === "series")
-                            .map(m => ({ label: "" + m.Title + " (" + m.Year + ")", id: m.imdbID }));
-                        return prompt({
-                            title: "IMDB",
-                            question: "Which movie do you mean?",
-                            options,
-                        })
-                    }
+                            const options = movies.Search
+                                .filter(m => m.Type === "movie" || m.Type === "series")
+                                .map(m => ({ label: "" + m.Title + " (" + m.Year + ")", id: m.imdbID }));
+                            return prompt({
+                                title: "IMDB",
+                                question: "Which movie do you mean?",
+                                options,
+                            })
+                        }
                     }).then((movieId) => {
                         var url = "https://www.omdbapi.com/?apiKey=" + apiKey + "&i=" + movieId + "&plot=full";
                         return !movieId ? [{ text: "No movie selected!" }] : fetch(url).then(r => r.json()).then((movies) => {
@@ -295,47 +307,67 @@ export default {
                             const cast = movies.Actors.replace(new RegExp(', ', 'g'), "]] [[");
                             const genre = movies.Genre.replace(new RegExp(', ', 'g'), " #");
 
-                            if (extensionAPI.settings.get("imdb-attributes") == true) {
-                                return [
-                                    {
-                                        text: "![](" + movies.Poster + ")  "
-                                    },
-                                    {
-                                        text: "**Metadata:**",
-                                        children: [
-                                            { text: "" + imdbDirector + ":: [[" + directors + "]]" },
-                                            { text: "" + imdbWriter + ":: [[" + writers + "]]" },
-                                            { text: "" + imdbCast + ":: [[" + cast + "]]" },
-                                            { text: "" + imdbYear + ":: [[" + movies.Year + "]]" },
-                                            { text: "" + imdbGenre + ":: #" + genre + "" },
-                                        ]
-                                    },
-                                    {
-                                        text: "**IMDb:** https://www.imdb.com/title/" + movies.imdbID + "",
-                                    },
-                                    { text: "**Plot Summary:** " + movies.Plot + "" },
-                                ];
-                            } else {
-                                return [
-                                    {
-                                        text: "![](" + movies.Poster + ")  "
-                                    },
-                                    {
-                                        text: "**Metadata:**",
-                                        children: [
-                                            { text: "**" + imdbDirector + ":** [[" + directors + "]]" },
-                                            { text: "**" + imdbWriter + ":** [[" + writers + "]]" },
-                                            { text: "**" + imdbCast + ":** [[" + cast + "]]" },
-                                            { text: "**" + imdbYear + ":** [[" + movies.Year + "]]" },
-                                            { text: "**" + imdbGenre + ":** #" + genre + "" },
-                                        ]
-                                    },
-                                    {
-                                        text: "**IMDb:** https://www.imdb.com/title/" + movies.imdbID + "",
-                                    },
-                                    { text: "**Plot Summary:** " + movies.Plot + "" },
-                                ];
+                            var imdbRating = undefined;
+                            var rtRating = undefined;
+                            var mcRating = undefined;
+                            if (movies.hasOwnProperty("Ratings")) {
+                                for (var i = 0; i < movies.Ratings.length; i++) {
+                                    if (movies.Ratings[i].Source == "Internet Movie Database") {
+                                        imdbRating = movies.Ratings[i].Value.toString();
+                                        imdbRating = imdbRating.replace("/10", "");
+                                    } else if (movies.Ratings[i].Source == "Rotten Tomatoes") {
+                                        rtRating = movies.Ratings[i].Value.toString();
+                                        rtRating = rtRating.replace("%", "");
+                                    } else if (movies.Ratings[i].Source == "Metacritic") {
+                                        mcRating = movies.Ratings[i].Value.toString();
+                                        mcRating = mcRating.replace("/100", "");
+                                    }
+                                }
                             }
+                            var ratings = "";
+                            if (imdbRating != undefined) {
+                                ratings += "#imdbIcon ^^" + imdbRating + "^^";
+                            }
+                            if (rtRating != undefined) {
+                                if (parseInt(rtRating) < 60) {
+                                    ratings += "#rtIconRotten ^^" + rtRating + "%^^";
+                                } else {
+                                    ratings += "#rtIconFresh ^^" + rtRating + "%^^";
+                                }
+                            }
+                            if (mcRating != undefined) {
+                                ratings += "  #mcIcon^^" + mcRating + "^^ ";
+                            }
+                            var children = [];
+                            if (extensionAPI.settings.get("imdb-attributes") == true) {
+                                children.push({ text: "" + imdbDirector + ":: [[" + directors + "]]" });
+                                children.push({ text: "" + imdbWriter + ":: [[" + writers + "]]" });
+                                children.push({ text: "" + imdbCast + ":: [[" + cast + "]]" });
+                                children.push({ text: "" + imdbYear + ":: [[" + movies.Year + "]]" });
+                                children.push({ text: "" + imdbGenre + ":: #" + genre + "" });
+                                children.push({ text: "" + imdbRatingString +":: " + ratings + "" });
+                            } else {
+                                children.push({ text: "" + imdbDirector + ": [[" + directors + "]]" });
+                                children.push({ text: "" + imdbWriter + ": [[" + writers + "]]" });
+                                children.push({ text: "" + imdbCast + ": [[" + cast + "]]" });
+                                children.push({ text: "" + imdbYear + ": [[" + movies.Year + "]]" });
+                                children.push({ text: "" + imdbGenre + ": #" + genre + "" });
+                                children.push({ text: "" + imdbRatingString +": " + ratings + "" });
+                            }
+
+                            return [
+                                {
+                                    text: "![](" + movies.Poster + ")  "
+                                },
+                                {
+                                    text: "**Metadata:**",
+                                    children: children
+                                },
+                                {
+                                    text: "**IMDb:** https://www.imdb.com/title/" + movies.imdbID + "",
+                                },
+                                { text: "**Plot Summary:** " + movies.Plot + "" },
+                            ];
                         })
                     })
                 }
