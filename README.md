@@ -1,6 +1,9 @@
 This extension allows you to search and import metadata for films or tv series from the IMDb. 
 
 **New:**
+- fallback to search by IMDb id if the title search doesn't find the correct title. Simply choose 'None of these titles!' in the select menu, then add the IMDb id in the next popup. The IMDb id is in the URL:
+  - For Back to the Future, the url is: https://www.imdb.com/title/tt0088763/
+  - the IMDb id is the tt0088763 string
 - get Ratings from IMDb, Rotten Tomatoes and Metacritic if they are available.
 
 You will need to get an API key from [omdbapi.com](http://www.omdbapi.com/apikey.aspx) and insert it in the Roam Depot configuration panel.
