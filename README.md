@@ -1,19 +1,71 @@
-This extension allows you to search and import metadata for films or tv series from the IMDb. 
+## IMDb Import for Roam
 
-**New:**
-- fallback to search by IMDb id if the title search doesn't find the correct title. Simply choose 'None of these titles!' in the select menu, then add the IMDb id in the next popup. The IMDb id is in the URL:
-  - For Back to the Future, the url is: https://www.imdb.com/title/tt0088763/
-  - the IMDb id is the tt0088763 string
-- get Ratings from IMDb, Rotten Tomatoes and Metacritic if they are available.
+Import film/TV metadata from OMDb/IMDb directly into your current Roam page.
 
-You will need to get an API key from [omdbapi.com](http://www.omdbapi.com/apikey.aspx) and insert it in the Roam Depot configuration panel.
+### What it does
 
-You can trigger the extension via the Command Palette or via SmartBlocks using <%IMDB%>.
+- Uses the current page title as the search query.
+- Lets you pick a matching movie/series from a list.
+- Supports fallback by direct IMDb ID (`tt...`) if title search is not enough.
+- Inserts poster, metadata, IMDb link, and plot summary.
+- Includes ratings when available (IMDb, Rotten Tomatoes, Metacritic).
 
-The extension will retrieve the page title, search IMDb for that title and then present a list of matching films or tv series. After you select one, it will import the poster and metadata, formatted nicely using Roam Research conventions.
+You can trigger it via:
 
-https://www.loom.com/share/8ef29241dd8247099fc0353888e8f3bc
+- Command Palette: `IMDb import`
+- SmartBlocks: `<%IMDB%>`
 
-With thanks to @dvargas92495 https://github.com/dvargas92495 for his help generating the modal select configuration!
+---
 
-After feedback, this extension has been updated to allow configuration of the headings for the director, writer, cast, year and genre headings, as well as to have optional output using Roam Research attributes. Thanks @8bitgentleman!
+## Setup
+
+1. Get an API key from [OMDb](http://www.omdbapi.com/apikey.aspx).
+2. Open Roam Depot settings for this extension.
+3. Paste your key into `OMDb API key`.
+
+---
+
+## Settings
+
+Top-level settings:
+
+- `OMDb API key`
+- `Output as attributes`
+- `Insert position` (`top` or `last`)
+- `Rewrite Roam Page Title` (toggle)
+- `Advanced Output Options` (toggle)
+
+When `Advanced Output Options` is ON:
+
+- Custom labels for Director, Writer, Cast, Year, Genre, Ratings
+- Per-field output order (`1` to `6`) for those six metadata rows
+
+---
+
+## Page title rewrite behaviour
+
+When `Rewrite Roam Page Title` is ON:
+
+- The extension asks for confirmation before renaming.
+- Renaming is only attempted for page-level imports (not block-context imports).
+- If confirmed, the page title is updated to the selected IMDb title.
+
+This is a user-data mutation. Keep this OFF if you never want automatic page renaming.
+
+---
+
+## Notes and limitations
+
+- Imports run one at a time; repeated triggers while running are ignored with a toast.
+- `Insert position: top` prepends content and shifts existing top-level blocks down.
+- `Insert position: last` appends at the end of the page.
+- External metadata is normalised/sanitised, but source data quality still depends on OMDb.
+
+---
+
+## Example IMDb ID fallback
+
+If you choose `None of these titles!`, enter an IMDb ID manually, e.g.:
+
+- URL: `https://www.imdb.com/title/tt0088763/`
+- ID: `tt0088763`
